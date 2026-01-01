@@ -10,9 +10,9 @@ const app = express();
 connectDB();
 
 app.use(express.json());
-// ✅ Serve frontend files
-app.use(express.static(path.join(__dirname, "../frontend")));
 
+// ✅ Serve frontend
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 // Test route
 app.get("/", (req, res) => {
@@ -30,7 +30,6 @@ app.post("/shorten", async (req, res) => {
 
     const shortCode = customCode || shortid.generate();
 
-    // ✅ CHECK IF CUSTOM CODE ALREADY EXISTS
     const existing = await Url.findOne({ shortCode });
     if (existing) {
       return res.status(409).json({
@@ -38,7 +37,8 @@ app.post("/shorten", async (req, res) => {
       });
     }
 
-    const shortUrl = `http://localhost:3000/${shortCode}`;
+    // ✅ IMPORTANT FIX
+    const shortUrl = `${req.protocol}://${req.get("host")}/${shortCode}`;
     const qrCode = await QRCode.toDataURL(shortUrl);
 
     const url = new Url({ longUrl, shortCode });
@@ -47,11 +47,9 @@ app.post("/shorten", async (req, res) => {
     res.json({ longUrl, shortUrl, qrCode });
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: error.message });
   }
 });
-
 
 // Redirect
 app.get("/:code", async (req, res) => {
@@ -64,5 +62,5 @@ app.get("/:code", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
